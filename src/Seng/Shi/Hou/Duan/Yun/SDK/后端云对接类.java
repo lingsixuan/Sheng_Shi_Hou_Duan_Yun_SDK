@@ -346,6 +346,6 @@ public class 后端云对接类 implements API {
      * @return 上次请求服务器时服务器返回的时间戳
      */
     public long get服务器时间() {
-        return 服务器时间;
+        return 服务器时间 * 1000;
     }
 }
