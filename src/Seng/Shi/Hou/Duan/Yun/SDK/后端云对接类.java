@@ -27,7 +27,7 @@ public class 后端云对接类 implements API {
 
     protected int 允许时间误差 = 30;
 
-    protected long 服务器时间;
+    protected static long 服务器时间;
 
     protected String 服务器地址 = "http://1.117.170.174/api/";
 
