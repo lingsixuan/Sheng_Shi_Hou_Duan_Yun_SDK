@@ -1,5 +1,6 @@
 package Seng.Shi.Hou.Duan.Yun.SDK;
 
+import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 
 /**
@@ -84,14 +85,9 @@ public interface API {
         /**
          * 发现更新版本时将会回调此方法
          *
-         * @param 强制更新 新版本是否要求强制更新，值为true时代表强制更新，值为false时代表非强制更新
-         * @param 版本号  新版本的版本号
-         * @param 版本名称 新版本的版本名称
-         * @param 下载链接 更新版本下载链接
-         * @param 发布时间 新版本的发布时间
-         * @param 发布IP 发布新版本的人的IP地址
+         * @param 版本数据 更新版本数据
          */
-        void 发现更新(boolean 强制更新, int 版本号, String 版本名称, String 下载链接, long 发布时间, String 发布IP);
+        void 发现更新(版本数据类 版本数据);
 
         void 没有更新();
 

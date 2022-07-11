@@ -1,6 +1,7 @@
 package Seng.Shi.Hou.Duan.Yun.SDK;
 
 import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
+import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.工具类.网络操作;
 import android.content.Context;
@@ -165,8 +166,7 @@ public class 后端云对接类 implements API {
                         throw new 解包出错(js.getString("信息"));
                     js = js.getJSONObject("信息");
                     if (js.getInt("更新") == 1) {
-                        回调.发现更新(js.getInt("强制更新") == 1, js.getInt("版本号"),
-                                js.getString("版本名称"), js.getString("更新链接"), json.getLong("发布时间"), js.getString("IP"));
+                        回调.发现更新(new 版本数据类(json));
                     } else
                         回调.没有更新();
                 } catch (解包出错 e) {
