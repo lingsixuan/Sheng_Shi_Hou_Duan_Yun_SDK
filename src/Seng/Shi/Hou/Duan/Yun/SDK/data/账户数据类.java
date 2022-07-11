@@ -9,7 +9,7 @@ import java.io.Serializable;
  * 此类中保存了用户账户的数据，您可以将它视为用户的账户。
  * 此类实现了Serializable接口，可以轻易在Activity之间传递
  */
-public final class 账户数据 implements Serializable {
+public final class 账户数据类 implements Serializable {
     private final int ID;
     private final String 账号;
     private final String 昵称;
@@ -35,15 +35,15 @@ public final class 账户数据 implements Serializable {
      */
     private final long 解绑时间;
 
-    public 账户数据(JSONObject json) throws JSONException {
+    public 账户数据类(JSONObject json) throws JSONException {
         ID = json.getInt("ID");
         账号 = json.getString("账号");
         昵称 = json.getString("昵称");
         邮箱 = json.has("邮箱") ? json.getString("邮箱") : "";
-        会员 = json.getLong("会员");
-        注册时间 = json.getLong("注册时间");
+        会员 = json.getLong("会员") * 1000;
+        注册时间 = json.getLong("注册时间") * 1000;
         绑定设备 = json.getInt("绑定设备");
-        解绑时间 = json.getLong("解绑时间");
+        解绑时间 = json.getLong("解绑时间") * 1000;
     }
 
     public int getID() {

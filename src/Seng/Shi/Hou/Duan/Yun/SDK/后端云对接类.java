@@ -1,7 +1,7 @@
 package Seng.Shi.Hou.Duan.Yun.SDK;
 
 import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
-import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据;
+import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.工具类.网络操作;
 import android.content.Context;
 import android.provider.Settings;
@@ -237,7 +237,7 @@ public class 后端云对接类 implements API {
                 try {
                     JSONObject json1 = 解包响应数据(数据);
                     if (json1.getBoolean("状态")) {
-                        回调.登录成功(new 账户数据(json1.getJSONObject("信息")));
+                        回调.登录成功(new 账户数据类(json1.getJSONObject("信息")));
                     } else {
                         回调.登录失败(json1.getString("信息"));
                     }

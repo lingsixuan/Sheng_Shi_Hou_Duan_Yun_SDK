@@ -1,6 +1,6 @@
 package Seng.Shi.Hou.Duan.Yun.SDK;
 
-import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据;
+import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 
 /**
  * 此处定义了后端云所有可供调用的API，您无需关心它具体如何运作，只需要调用它即可
@@ -50,7 +50,7 @@ public interface API {
      * 卡密使用过后既销毁，无法重复使用
      * 请注意！使用卡密之后您需要重新调用登录接口获取账户最新数据！！
      *
-     * @param 账户ID 要激活的账户的ID，您可以调用登录回调传入的{@link 账户数据}中的getID()方法来获取 ,注意！您只能获取到当前登录用户的ID，后端云中没有提供获取他人ID的API
+     * @param 账户ID 要激活的账户的ID，您可以调用登录回调传入的{@link 账户数据类}中的getID()方法来获取 ,注意！您只能获取到当前登录用户的ID，后端云中没有提供获取他人ID的API
      * @param 卡号   要使用的卡号，卡密不可重复使用，一张卡密只能一个账户使用，卡密使用过后即可丢弃
      */
     void 使用卡密(int 账户ID, String 卡号, 使用卡密回调 回调);
@@ -114,7 +114,7 @@ public interface API {
     }
 
     interface 登录回调 {
-        void 登录成功(账户数据 data);
+        void 登录成功(账户数据类 data);
 
         void 登录失败(String 失败原因);
     }
