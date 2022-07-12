@@ -81,6 +81,19 @@ public interface API {
      */
     void 检查更新(int 当前版本号, 检查更新回调 回调);
 
+    /**
+     * 读取项目公告
+     * @param 回调 回调方法
+     */
+    void 读取公告(读取公告回调 回调);
+
+    interface 读取公告回调 {
+
+        void 读取公告成功(String 公告);
+
+        void 读取公告失败(String 错误);
+    }
+
     interface 检查更新回调 {
         /**
          * 发现更新版本时将会回调此方法

@@ -144,6 +144,38 @@ public class 后端云对接类 implements API {
 
 
     /**
+     * 读取公告
+     *
+     * @param 回调 回调方法
+     */
+    @Override
+    public void 读取公告(读取公告回调 回调) {
+        if (回调 == null)
+            return;
+        try {
+            JSONObject json = new JSONObject();
+            json.put("xm_id", 项目ID);
+            new 网络操作(context).发送数据(服务器地址 + "读取公告.php", 生成数据(json), (数据, 响应码) -> {
+                try {
+                    if (响应码 != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject js = 解包响应数据(数据);
+                    if (!js.getBoolean("状态"))
+                        throw new 解包出错(js.getString("信息"));
+                    回调.读取公告成功(js.getString("信息"));
+                } catch (解包出错 e) {
+                    回调.读取公告失败(e.异常);
+                } catch (JSONException e) {
+                    回调.读取公告失败("解析响应失败：" + e.getLocalizedMessage());
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
      * @param 当前版本号 服务器依靠版本号来判断当前请求的客户端版本和服务器上的众多版本之间的新旧关系。
      *              当您在管理端发布新版本时，版本号一栏请务必填写和APP一样的版本号，且新的版本号必须比历史所有版本都大。
      *              此参数建议和您项目的versionCode的值相同。
@@ -166,7 +198,7 @@ public class 后端云对接类 implements API {
                         throw new 解包出错(js.getString("信息"));
                     js = js.getJSONObject("信息");
                     if (js.getInt("更新") == 1) {
-                        回调.发现更新(new 版本数据类(json));
+                        回调.发现更新(new 版本数据类(js));
                     } else
                         回调.没有更新();
                 } catch (解包出错 e) {
