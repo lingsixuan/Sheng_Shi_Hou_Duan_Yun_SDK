@@ -3,9 +3,10 @@ package Seng.Shi.Hou.Duan.Yun.SDK;
 import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
-import Seng.Shi.Hou.Duan.Yun.SDK.工具类.网络操作;
 import android.content.Context;
 import android.provider.Settings;
+import ling.android.操作.网络操作;
+import ling.android.操作.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
