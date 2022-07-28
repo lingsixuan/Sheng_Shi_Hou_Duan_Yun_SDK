@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="核心支持库">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/核心支持库.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

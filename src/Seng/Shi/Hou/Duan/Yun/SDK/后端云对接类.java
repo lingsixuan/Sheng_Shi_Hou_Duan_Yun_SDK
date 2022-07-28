@@ -31,7 +31,7 @@ public class 后端云对接类 implements API {
 
     protected static long 服务器时间;
 
-    protected String 服务器地址 = "http://1.117.170.174/api/";
+    protected String 服务器地址 = "https://api.lingsixuan.top/api/";
 
     protected Context context;
 
