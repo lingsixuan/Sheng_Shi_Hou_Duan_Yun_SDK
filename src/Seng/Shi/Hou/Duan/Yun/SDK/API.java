@@ -2,6 +2,7 @@ package Seng.Shi.Hou.Duan.Yun.SDK;
 
 import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
+import ling.android.操作.okhttp;
 
 /**
  * 此处定义了后端云所有可供调用的API，您无需关心它具体如何运作，只需要调用它即可
@@ -83,9 +84,29 @@ public interface API {
 
     /**
      * 读取项目公告
+     *
      * @param 回调 回调方法
      */
     void 读取公告(读取公告回调 回调);
+
+    /**
+     * 设置是否启用证书固定
+     * 启用证书固定之后，SDK会验证服务器的公钥证书是否可信，可有效防范中间人攻击。
+     * 请注意！服务器提供商可能在任何时候更换证书，证书更换之后APP将无法连接至服务器！
+     * 更换证书将会提前在APP内通知开发者
+     *
+     * @param pinning 是否启用？
+     */
+    void setPinning(boolean pinning);
+
+    /**
+     * SDK内部已经设置号了服务器的公钥证书，如果服务器更换了公钥证书而没有即使提供新的SDK
+     * 那么您可以通过此方法来设置新的公钥证书。
+     * 证书链所有对象共享。
+     *
+     * @param 证书链
+     */
+    void set证书链(okhttp.证书 证书链);
 
     interface 读取公告回调 {
 

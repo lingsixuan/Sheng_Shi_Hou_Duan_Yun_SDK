@@ -7,10 +7,14 @@ import android.content.Context;
 import android.provider.Settings;
 import ling.android.操作.网络操作;
 import ling.android.操作.*;
+import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * API接口的具体实现。
@@ -32,6 +36,11 @@ public class 后端云对接类 implements API {
     protected static long 服务器时间;
 
     protected String 服务器地址 = "https://api.lingsixuan.top/api/";
+
+    protected static okhttp.证书 证书链 = new okhttp.证书()
+            .add("api.lingsixuan.top", "sha256/cOZS1D14NVyXRbTjP2SAhTpP4pMHaHWrvT6DJY/tPQ8=");
+
+    protected boolean isPinning = false;
 
     protected Context context;
 
@@ -150,24 +159,26 @@ public class 后端云对接类 implements API {
      * @param 回调 回调方法
      */
     @Override
-    public void 读取公告(读取公告回调 回调) {
-        if (回调 == null)
-            return;
+    public void 读取公告(@NotNull 读取公告回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
-            new 网络操作(context).发送数据(服务器地址 + "读取公告.php", 生成数据(json), (数据, 响应码) -> {
-                try {
-                    if (响应码 != 200)
+
+            发送数据("读取公告.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.读取公告失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200) {
                         throw new 解包出错("网络异常");
-                    JSONObject js = 解包响应数据(数据);
-                    if (!js.getBoolean("状态"))
-                        throw new 解包出错(js.getString("信息"));
-                    回调.读取公告成功(js.getString("信息"));
-                } catch (解包出错 e) {
-                    回调.读取公告失败(e.异常);
-                } catch (JSONException e) {
-                    回调.读取公告失败("解析响应失败：" + e.getLocalizedMessage());
+                    }
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (!json.getBoolean("状态"))
+                        throw new 解包出错(json.getString("信息"));
+                    回调.读取公告成功(json.getString("信息"));
                 }
             });
         } catch (JSONException e) {
@@ -183,62 +194,67 @@ public class 后端云对接类 implements API {
      * @param 回调    回调方法，此值为null时，检查更新的请求不会实际提交到服务器。
      */
     @Override
-    public void 检查更新(int 当前版本号, 检查更新回调 回调) {
-        if (回调 == null)
-            return;
+    public void 检查更新(int 当前版本号, @NotNull 检查更新回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
             json.put("v", 当前版本号);
-            new 网络操作(context).发送数据(服务器地址 + "检查更新.php", 生成数据(json), (数据, 响应码) -> {
-                try {
-                    if (响应码 != 200)
+
+            发送数据("检查更新.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.检查更新出错(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject js = 解包响应数据(数据);
-                    if (!js.getBoolean("状态"))
-                        throw new 解包出错(js.getString("信息"));
-                    js = js.getJSONObject("信息");
-                    if (js.getInt("更新") == 1) {
-                        回调.发现更新(new 版本数据类(js));
-                    } else
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (!json.getBoolean("状态")) {
+                        throw new 解包出错(json.getString("信息"));
+                    }
+                    json = json.getJSONObject("信息");
+                    if (json.getInt("更新") == 1) {
+                        回调.发现更新(new 版本数据类(json));
+                    } else {
                         回调.没有更新();
-                } catch (解包出错 e) {
-                    回调.检查更新出错(e.异常);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    回调.检查更新出错("解析响应失败" + e.getLocalizedMessage());
+                    }
                 }
             });
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void 使用卡密(int 账户ID, String 卡号, 使用卡密回调 回调) {
+    public void 使用卡密(int 账户ID, String 卡号, @NotNull 使用卡密回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
             json.put("key", 卡号);
             json.put("ID", 账户ID);
-            new 网络操作(context).发送数据(服务器地址 + "使用卡密.php", 生成数据(json), (数据, 响应码) -> {
-                try {
-                    if (响应码 != 200)
-                        throw new 解包出错("网络异常");
-                    JSONObject js = 解包响应数据(数据);
-                    if (js.getBoolean("状态")) {
-                        if (回调 != null)
-                            回调.使用成功(卡号);
-                    } else
-                        throw new 解包出错(js.getString("信息"));
 
-                } catch (解包出错 e) {
-                    if (回调 != null)
-                        回调.使用失败(e.异常);
-                } catch (JSONException e) {
-                    回调.使用失败("解析响应失败" + e.getLocalizedMessage());
+            发送数据("使用卡密.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.使用失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (json.getBoolean("状态")) {
+                        回调.使用成功(卡号);
+                    } else {
+                        回调.使用失败(json.getString("信息"));
+                    }
                 }
             });
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -252,33 +268,30 @@ public class 后端云对接类 implements API {
      * @param 回调 回调方法，请注意！回调方法为null时，登录请求并不会真的提交到服务器！
      */
     @Override
-    public void 登录账号(String 账号, String 密码, 登录回调 回调) {
-        if (回调 == null)
-            return;
+    public void 登录账号(String 账号, String 密码, @NotNull 登录回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
             json.put("user", 账号);
             json.put("pass", 密码);
             json.put("UID", ANDROID_ID);
-            new 网络操作(context).发送数据(服务器地址 + "登录.php", 生成数据(json), (数据, 响应) -> {
-                if (响应 != 200) {
-                    //网络请求出错
-                    回调.登录失败("网络异常");
-                    return;
+
+            发送数据("登录.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.登录失败(错误详情);
                 }
-                try {
-                    JSONObject json1 = 解包响应数据(数据);
-                    if (json1.getBoolean("状态")) {
-                        回调.登录成功(new 账户数据类(json1.getJSONObject("信息")));
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (json.getBoolean("状态")) {
+                        回调.登录成功(new 账户数据类(json.getJSONObject("信息")));
                     } else {
-                        回调.登录失败(json1.getString("信息"));
+                        回调.登录失败(json.getString("信息"));
                     }
-                } catch (解包出错 e) {
-                    e.printStackTrace();
-                    回调.登录失败(e.异常);
-                } catch (JSONException e) {
-                    回调.登录失败("解析响应失败" + e.getLocalizedMessage());
                 }
             });
         } catch (JSONException e) {
@@ -297,7 +310,7 @@ public class 后端云对接类 implements API {
     }
 
     @Override
-    public void 注册账号(String 账号, String 密码, String 昵称, String 邮箱, 注册回调 回调) {
+    public void 注册账号(String 账号, String 密码, String 昵称, String 邮箱, @NotNull 注册回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
@@ -306,22 +319,21 @@ public class 后端云对接类 implements API {
             json.put("name", 昵称);
             json.put("mail", 邮箱);
             json.put("UID", ANDROID_ID);
-            new 网络操作(context).发送数据(服务器地址 + "注册.php", 生成数据(json), (数据, 响应) -> {
-                try {
-                    if (响应 != 200)
+
+            发送数据("注册.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.注册失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject data = 解包响应数据(数据);
-                    if (data.getBoolean("状态")) {
-                        if (回调 != null)
-                            回调.注册成功(账号, 密码);
-                    } else
-                        throw new 解包出错(data.getString("信息"));
-                } catch (解包出错 e) {
-                    if (回调 != null)
-                        回调.注册失败(e.异常);
-                } catch (JSONException e) {
-                    if (回调 != null)
-                        回调.注册失败("解析响应失败" + e.getLocalizedMessage());
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (json.getBoolean("状态")) {
+                        回调.注册成功(账号, 密码);
+                    } else throw new 解包出错(json.getString("信息"));
                 }
             });
         } catch (JSONException e) {
@@ -330,14 +342,44 @@ public class 后端云对接类 implements API {
     }
 
 
-    protected String 生成数据(JSONObject json) {
-        String temp;
+    protected void 发送数据(String api, JSONObject json, @NotNull 收到数据 回调) {
+        new okhttp(isPinning ? 证书链 : new okhttp.证书()).取异步对象().post(服务器地址 + api, 生成数据(json), new okhttp.异步请求.响应() {
+            @Override
+            public void 请求出错(@NotNull Call call, @NotNull IOException e) {
+                if (Objects.requireNonNull(e.getMessage()).indexOf("Certificate pinning failure!", 0) != -1) {
+                    回调.错误("不被信任的证书！");
+                } else {
+                    回调.错误("网络异常");
+                }
+            }
+
+            @Override
+            public void 请求完成(@NotNull Call call, @NotNull Response response) throws IOException {
+                try {
+                    回调.收到响应(response);
+                } catch (JSONException e) {
+                    回调.错误("解析响应失败");
+                } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
+                    回调.错误(解包出错.异常);
+                }
+            }
+        });
+    }
+
+    public interface 收到数据 {
+        void 错误(String 错误详情);
+
+        void 收到响应(Response request) throws JSONException, 解包出错, IOException;
+    }
+
+
+    protected RequestBody 生成数据(JSONObject json) {
+        FormBody.Builder builder = new FormBody.Builder();
+        builder.add("json", json.toString());
         if (签名校验) {
-            temp = "json=" + json + "&MD5=" + 加解密操作.MD5加密(json + 签名密钥);
-        } else {
-            temp = "json=" + json;
+            builder.add("MD5", 加解密操作.MD5加密(json + 签名密钥));
         }
-        return temp;
+        return builder.build();
     }
 
     protected JSONObject 解包响应数据(String 响应数据) throws 解包出错 {
@@ -365,6 +407,31 @@ public class 后端云对接类 implements API {
             e.printStackTrace();
             throw new 解包出错(e.getLocalizedMessage());
         }
+    }
+
+    /**
+     * 设置是否启用证书固定
+     * 启用证书固定之后，SDK会验证服务器的公钥证书是否可信，可有效防范中间人攻击。
+     * 请注意！服务器提供商可能在任何时候更换证书，证书更换之后APP将无法连接至服务器！
+     * 更换证书将会提前在APP内通知开发者
+     *
+     * @param pinning 是否启用？
+     */
+    @Override
+    public void setPinning(boolean pinning) {
+        this.isPinning = pinning;
+    }
+
+    /**
+     * SDK内部已经设置号了服务器的公钥证书，如果服务器更换了公钥证书而没有即使提供新的SDK
+     * 那么您可以通过此方法来设置新的公钥证书。
+     * 证书链所有对象共享。
+     *
+     * @param 证书链
+     */
+    @Override
+    public void set证书链(okhttp.证书 证书链) {
+        后端云对接类.证书链 = 证书链;
     }
 
     /**
