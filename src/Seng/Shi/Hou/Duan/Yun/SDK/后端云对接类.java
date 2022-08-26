@@ -55,8 +55,8 @@ public class 后端云对接类 implements API {
      *                这个值不会改变。
      * @param 签名校验    这个值用来确定要不要开启数据包签名，开启之后服务器会对下行数据签名，会检查上行数据的签名。
      *                客户端会对上行数据签名，会检查下行数据的签名，
-     *                依次来保证数据没有被篡改。
-     *                如果启用测设置，服务器会强制要求所有上行数据必须签名，
+     *                以此来保证数据没有被篡改。
+     *                如果启用此设置，服务器会强制要求所有上行数据必须签名，
      *                如果关闭此设置，则以上效果都不会生效。
      *                这个值要和项目的设置一致才能正常工作。
      * @param 签名密钥    签名校验的密钥，后端云通过这个密钥来保证通信安全。
@@ -92,7 +92,7 @@ public class 后端云对接类 implements API {
      *                密钥可以在APP内更换，但是更换密钥之后，没有同步更新的APP就无法和服务器建立连接了。
      *                密钥要和项目的设置值一致才能正常工作。
      * @param 允许时间误差  SDK将检查收到的数据包中携带的时间戳，如果时间戳相对当前时间差距超过此阈值（单位秒），则不接受此数据包。
-     *                如果你的用户距离服务器（上海）比较远，或者网络波动较大，那么这个阈值需要设置的长一些。
+     *                如果你的用户距离服务器（上海）比较远，或者网络波动较大，那么这个阈值需要设置的长一些。默认值30秒。
      */
     public 后端云对接类(Context context, int 项目ID, boolean 签名校验, String 签名密钥, int 允许时间误差) {
         this.context = context;
@@ -122,7 +122,7 @@ public class 后端云对接类 implements API {
      *                密钥可以在APP内更换，但是更换密钥之后，没有同步更新的APP就无法和服务器建立连接了！
      *                密钥要和项目的设置值一致才能正常工作。
      * @param 允许时间误差  SDK将检查收到的数据包中携带的时间戳，如果时间戳相对当前时间差距超过此阈值（单位秒），则不接受此数据包。
-     *                如果你的用户距离服务器（上海）比较远，或者网络波动较大，那么这个阈值需要设置的长一些。
+     *                如果你的用户距离服务器（上海）比较远，或者网络波动较大，那么这个阈值需要设置的长一些。默认值30秒。
      * @param 服务器地址   此处用于指定服务器的地址，一般情况下您无需关心。
      */
     public 后端云对接类(Context context, int 项目ID, boolean 签名校验, String 签名密钥, int 允许时间误差, String 服务器地址) {
@@ -341,6 +341,82 @@ public class 后端云对接类 implements API {
         }
     }
 
+    /**
+     * 使用卡密直接登录，要调用此API需要在圣使后端云客户端内启用项目的单码登录设置。
+     * 请注意，切换单码登录设置的值，将会导致您项目中的卡密数据定义模糊，污染卡密。
+     * 如果您必须切换登录模式，系统会代您删除所有脏污数据，无法撤销！
+     *
+     * @param 卡号 卡号
+     * @param 回调 回调
+     */
+    @Override
+    public void 卡密登录(String 卡号, @NotNull 卡密登录回调 回调) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("xm_id", 项目ID);
+            json.put("UID", ANDROID_ID);
+            json.put("key", 卡号);
+            发送数据("卡密登录.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.登录失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (json.getBoolean("状态")) {
+                        回调.登录成功(json.getString("信息"), json.getLong("到期时间") * 1000);
+                    } else {
+                        throw new 解包出错(json.getString("信息"));
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 解除一张卡密绑定的设备，要调用此API需要在圣使后端云客户端内启用项目的单码登录设置且启用设备绑定功能。
+     * 请注意，切换单码登录设置的值，将会导致您项目中的卡密数据定义模糊，污染卡密。
+     * 如果您必须切换登录模式，系统会代您删除所有脏污数据，无法撤销！
+     *
+     * @param 卡号 卡号
+     * @param 回调 回调
+     */
+    @Override
+    public void 解绑卡密(String 卡号, @NotNull 解绑卡密回调 回调) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("xm_id", 项目ID);
+            json.put("UID", ANDROID_ID);
+            json.put("key", 卡号);
+            发送数据("解绑卡密.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.解绑失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    if (json.getBoolean("状态")) {
+                        回调.解绑成功(json.getString("信息"));
+                    } else {
+                        throw new 解包出错(json.getString("信息"));
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     protected void 发送数据(String api, JSONObject json, @NotNull 收到数据 回调) {
         new okhttp(isPinning ? 证书链 : new okhttp.证书()).取异步对象().post(服务器地址 + api, 生成数据(json), new okhttp.异步请求.响应() {
@@ -364,12 +440,6 @@ public class 后端云对接类 implements API {
                 }
             }
         });
-    }
-
-    public interface 收到数据 {
-        void 错误(String 错误详情);
-
-        void 收到响应(Response request) throws JSONException, 解包出错, IOException;
     }
 
 
@@ -423,7 +493,7 @@ public class 后端云对接类 implements API {
     }
 
     /**
-     * SDK内部已经设置号了服务器的公钥证书，如果服务器更换了公钥证书而没有即使提供新的SDK
+     * SDK内部已经设置好了服务器的公钥证书，如果服务器更换了公钥证书而没有及时提供新的SDK
      * 那么您可以通过此方法来设置新的公钥证书。
      * 证书链所有对象共享。
      *

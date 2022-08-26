@@ -1,8 +1,14 @@
 package Seng.Shi.Hou.Duan.Yun.SDK;
 
+import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 import ling.android.操作.okhttp;
+import okhttp3.Response;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
+
+import java.io.IOException;
 
 /**
  * 此处定义了后端云所有可供调用的API，您无需关心它具体如何运作，只需要调用它即可
@@ -23,7 +29,7 @@ public interface API {
 
     /**
      * 注册一个账户到后端云中
-     * 此方法用户不需要邮箱的项目，如果您的项目设置了必须输入邮箱，那么此方法调不通
+     * 此方法用于不需要邮箱的项目，如果您的项目设置了必须输入邮箱，那么此方法调不通
      * 此方法注册的账户会使用默认昵称
      * 使用默认昵称时，后台可能不好区分账户，所以不建议使用此方法
      *
@@ -108,6 +114,38 @@ public interface API {
      */
     void set证书链(okhttp.证书 证书链);
 
+    /**
+     * 使用卡密直接登录，要调用此API需要在圣使后端云客户端内启用项目的单码登录设置。
+     * 请注意，切换单码登录设置的值，将会导致您项目中的卡密数据定义模糊，污染卡密。
+     * 如果您必须切换登录模式，系统会代您删除所有脏污数据，无法撤销！
+     *
+     * @param 卡号 卡号
+     * @param 回调 回调
+     */
+    void 卡密登录(String 卡号, @NotNull 卡密登录回调 回调);
+
+    /**
+     * 解除一张卡密绑定的设备，要调用此API需要在圣使后端云客户端内启用项目的单码登录设置且启用设备绑定功能。
+     * 请注意，切换单码登录设置的值，将会导致您项目中的卡密数据定义模糊，污染卡密。
+     * 如果您必须切换登录模式，系统会代您删除所有脏污数据，无法撤销！
+     *
+     * @param 卡号 卡号
+     * @param 回调 回调
+     */
+    void 解绑卡密(String 卡号, @NotNull 解绑卡密回调 回调);
+
+    interface 解绑卡密回调 {
+        void 解绑成功(String 提示);
+
+        void 解绑失败(String 原因);
+    }
+
+    interface 卡密登录回调 {
+        void 登录成功(String 提示, long 到期时间);
+
+        void 登录失败(String 失败原因);
+    }
+
     interface 读取公告回调 {
 
         void 读取公告成功(String 公告);
@@ -147,5 +185,11 @@ public interface API {
         void 登录成功(账户数据类 data);
 
         void 登录失败(String 失败原因);
+    }
+
+    interface 收到数据 {
+        void 错误(String 错误详情);
+
+        void 收到响应(Response request) throws JSONException, 解包出错, IOException;
     }
 }
