@@ -3,9 +3,10 @@ package Seng.Shi.Hou.Duan.Yun.SDK;
 import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.provider.Settings;
-import ling.android.操作.网络操作;
 import ling.android.操作.*;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
 
@@ -27,9 +29,9 @@ public class 后端云对接类 implements API {
 
     protected int 项目ID;
 
-    protected boolean 签名校验 = false;
+    protected boolean 摘要校验 = false;
 
-    protected String 签名密钥 = "";
+    protected String 摘要盐值 = "";
 
     protected int 允许时间误差 = 30;
 
@@ -40,11 +42,17 @@ public class 后端云对接类 implements API {
     protected static okhttp.证书 证书链 = new okhttp.证书()
             .add("api.lingsixuan.top", "sha256/cOZS1D14NVyXRbTjP2SAhTpP4pMHaHWrvT6DJY/tPQ8=");
 
+    protected static boolean isSign = false;
+
+    protected static String serverPublicKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCGP6tTIDE6miH9XINvSZ4MjyHHElpVEvaweIFAnLmFBcIRIXO4iDGh0DVxHH7VmYtAGKTgfZX9NF6agqMoLFQFavnFP3WcCv92kHibduOaV1gymHKffTRVMOXSmTo6/Ya891RpnrkEQi/5Js1zZMPdViB7IHXv5AqOVJ7RfZvZEQIDAQAB";
+
     protected boolean isPinning = false;
 
     protected Context context;
 
     protected String ANDROID_ID;
+
+    protected String 原始数据 = "";
 
     /**
      * 此构造函数生成的对象可以显式规定签名校验和签名密钥的值
@@ -53,22 +61,22 @@ public class 后端云对接类 implements API {
      * @param 项目ID    此处为你要对接的项目ID，可以在圣使后端云客户端中查看。
      *                API靠项目ID来区分不同项目，
      *                这个值不会改变。
-     * @param 签名校验    这个值用来确定要不要开启数据包签名，开启之后服务器会对下行数据签名，会检查上行数据的签名。
-     *                客户端会对上行数据签名，会检查下行数据的签名，
+     * @param 摘要校验    这个值用来确定要不要开启数据包摘要检查，开启之后服务器会对下行数据附加摘要，会检查上行数据的摘要。
+     *                客户端会对上行数据附加摘要，会检查下行数据的摘要，
      *                以此来保证数据没有被篡改。
-     *                如果启用此设置，服务器会强制要求所有上行数据必须签名，
+     *                如果启用此设置，服务器会强制要求所有上行数据必须附加摘要，
      *                如果关闭此设置，则以上效果都不会生效。
      *                这个值要和项目的设置一致才能正常工作。
-     * @param 签名密钥    签名校验的密钥，后端云通过这个密钥来保证通信安全。
-     *                在签名校验启用时，数据包的签名和校验都通过这个密钥进行，
-     *                密钥可以在APP内更换，但是更换密钥之后，没有同步更新的APP就无法和服务器建立连接了。
-     *                密钥要和项目的设置值一致才能正常工作。
+     * @param 摘要盐值    摘要校验的盐值，后端云通过这个盐值来保证通信安全。
+     *                在摘要校验启用时，数据包的摘要和校验都通过这个盐值进行，
+     *                盐值可以在APP内更换，但是更换盐值之后，没有同步更新的APP就无法和服务器建立连接了。
+     *                摘要要和项目的设置值一致才能正常工作。
      */
-    public 后端云对接类(Context context, int 项目ID, boolean 签名校验, String 签名密钥) {
+    public 后端云对接类(Context context, int 项目ID, boolean 摘要校验, String 摘要盐值) {
         this.context = context;
         this.项目ID = 项目ID;
-        this.签名校验 = 签名校验;
-        this.签名密钥 = 签名密钥;
+        this.摘要校验 = 摘要校验;
+        this.摘要盐值 = 摘要盐值;
         this.ANDROID_ID = Settings.System.getString(context.getContentResolver(),
                 Settings.System.ANDROID_ID);
     }
@@ -81,24 +89,24 @@ public class 后端云对接类 implements API {
      * @param 项目ID    此处为你要对接的项目ID，可以在圣使后端云客户端中查看
      *                API靠项目ID来区分不同项目
      *                这个值不会改变
-     * @param 签名校验    这个值用来确定要不要开启数据包签名，开启之后服务器会对下行数据签名，会检查上行数据的签名。
-     *                客户端会对上行数据签名，会检查下行数据的签名。
-     *                依次来保证数据没有被篡改。
-     *                如果启用测设置，服务器会强制要求所有上行数据必须签名。
+     * @param 摘要校验    这个值用来确定要不要开启数据包摘要检查，开启之后服务器会对下行数据附加摘要，会检查上行数据的摘要。
+     *                客户端会对上行数据附加摘要，会检查下行数据的摘要，
+     *                以此来保证数据没有被篡改。
+     *                如果启用此设置，服务器会强制要求所有上行数据必须附加摘要，
      *                如果关闭此设置，则以上效果都不会生效。
      *                这个值要和项目的设置一致才能正常工作。
-     * @param 签名密钥    签名校验的密钥，后端云通过这个密钥来保证通信安全。
-     *                在签名校验启用时，数据包的签名和校验都通过这个密钥进行。
-     *                密钥可以在APP内更换，但是更换密钥之后，没有同步更新的APP就无法和服务器建立连接了。
-     *                密钥要和项目的设置值一致才能正常工作。
+     * @param 摘要盐值    摘要校验的盐值，后端云通过这个盐值来保证通信安全。
+     *                在摘要校验启用时，数据包的摘要和校验都通过这个盐值进行，
+     *                盐值可以在APP内更换，但是更换盐值之后，没有同步更新的APP就无法和服务器建立连接了。
+     *                摘要要和项目的设置值一致才能正常工作。
      * @param 允许时间误差  SDK将检查收到的数据包中携带的时间戳，如果时间戳相对当前时间差距超过此阈值（单位秒），则不接受此数据包。
      *                如果你的用户距离服务器（上海）比较远，或者网络波动较大，那么这个阈值需要设置的长一些。默认值30秒。
      */
-    public 后端云对接类(Context context, int 项目ID, boolean 签名校验, String 签名密钥, int 允许时间误差) {
+    public 后端云对接类(Context context, int 项目ID, boolean 摘要校验, String 摘要盐值, int 允许时间误差) {
         this.context = context;
         this.项目ID = 项目ID;
-        this.签名校验 = 签名校验;
-        this.签名密钥 = 签名密钥;
+        this.摘要校验 = 摘要校验;
+        this.摘要盐值 = 摘要盐值;
         this.允许时间误差 = 允许时间误差;
         this.ANDROID_ID = Settings.System.getString(context.getContentResolver(),
                 Settings.System.ANDROID_ID);
@@ -111,25 +119,25 @@ public class 后端云对接类 implements API {
      * @param 项目ID    此处为你要对接的项目ID，可以在圣使后端云客户端中查看。
      *                API靠项目ID来区分不同项目，
      *                这个值不会改变。
-     * @param 签名校验    这个值用来确定要不要开启数据包签名，开启之后服务器会对下行数据签名，会检查上行数据的签名，
-     *                客户端会对上行数据签名，会检查下行数据的签名，
-     *                依次来保证数据没有被篡改。
-     *                如果启用测设置，服务器会强制要求所有上行数据必须签名！
-     *                如果关闭此设置，则以上效果都不会生效，
+     * @param 摘要校验    这个值用来确定要不要开启数据包摘要检查，开启之后服务器会对下行数据附加摘要，会检查上行数据的摘要。
+     *                客户端会对上行数据附加摘要，会检查下行数据的摘要，
+     *                以此来保证数据没有被篡改。
+     *                如果启用此设置，服务器会强制要求所有上行数据必须附加摘要，
+     *                如果关闭此设置，则以上效果都不会生效。
      *                这个值要和项目的设置一致才能正常工作。
-     * @param 签名密钥    签名校验的密钥，后端云通过这个密钥来保证通信安全，
-     *                在签名校验启用时，数据包的签名和校验都通过这个密钥进行。
-     *                密钥可以在APP内更换，但是更换密钥之后，没有同步更新的APP就无法和服务器建立连接了！
-     *                密钥要和项目的设置值一致才能正常工作。
+     * @param 摘要盐值    摘要校验的盐值，后端云通过这个盐值来保证通信安全。
+     *                在摘要校验启用时，数据包的摘要和校验都通过这个盐值进行，
+     *                盐值可以在APP内更换，但是更换盐值之后，没有同步更新的APP就无法和服务器建立连接了。
+     *                摘要要和项目的设置值一致才能正常工作。
      * @param 允许时间误差  SDK将检查收到的数据包中携带的时间戳，如果时间戳相对当前时间差距超过此阈值（单位秒），则不接受此数据包。
      *                如果你的用户距离服务器（上海）比较远，或者网络波动较大，那么这个阈值需要设置的长一些。默认值30秒。
      * @param 服务器地址   此处用于指定服务器的地址，一般情况下您无需关心。
      */
-    public 后端云对接类(Context context, int 项目ID, boolean 签名校验, String 签名密钥, int 允许时间误差, String 服务器地址) {
+    public 后端云对接类(Context context, int 项目ID, boolean 摘要校验, String 摘要盐值, int 允许时间误差, String 服务器地址) {
         this.context = context;
         this.项目ID = 项目ID;
-        this.签名校验 = 签名校验;
-        this.签名密钥 = 签名密钥;
+        this.摘要校验 = 摘要校验;
+        this.摘要盐值 = 摘要盐值;
         this.允许时间误差 = 允许时间误差;
         this.服务器地址 = 服务器地址;
         this.ANDROID_ID = Settings.System.getString(context.getContentResolver(),
@@ -419,48 +427,59 @@ public class 后端云对接类 implements API {
 
 
     protected void 发送数据(String api, JSONObject json, @NotNull 收到数据 回调) {
-        new okhttp(isPinning ? 证书链 : new okhttp.证书()).取异步对象().post(服务器地址 + api, 生成数据(json), new okhttp.异步请求.响应() {
-            @Override
-            public void 请求出错(@NotNull Call call, @NotNull IOException e) {
-                if (Objects.requireNonNull(e.getMessage()).indexOf("Certificate pinning failure!", 0) != -1) {
-                    回调.错误("不被信任的证书！");
-                } else {
-                    回调.错误("网络异常");
-                }
-            }
+        new okhttp(isPinning ? 证书链 : new okhttp.证书()).取异步对象()
+                .post(服务器地址 + api, 生成数据(json), new okhttp.异步请求.响应() {
+                    @Override
+                    public void 请求出错(@NotNull Call call, @NotNull IOException e) {
+                        if (Objects.requireNonNull(e.getMessage()).indexOf("Certificate pinning failure!", 0) != -1) {
+                            回调.错误("不被信任的证书！");
+                        } else {
+                            回调.错误("网络异常");
+                        }
+                    }
 
-            @Override
-            public void 请求完成(@NotNull Call call, @NotNull Response response) throws IOException {
-                try {
-                    回调.收到响应(response);
-                } catch (JSONException e) {
-                    回调.错误("解析响应失败");
-                } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
-                    回调.错误(解包出错.异常);
-                }
-            }
-        });
+                    @Override
+                    public void 请求完成(@NotNull Call call, @NotNull Response response) throws IOException {
+                        try {
+                            回调.收到响应(response);
+                        } catch (JSONException e) {
+                            回调.错误("解析响应失败");
+                        } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
+                            回调.错误(解包出错.异常);
+                        }
+                    }
+                });
     }
 
 
     protected RequestBody 生成数据(JSONObject json) {
         FormBody.Builder builder = new FormBody.Builder();
         builder.add("json", json.toString());
-        if (签名校验) {
-            builder.add("MD5", 加解密操作.MD5加密(json + 签名密钥));
+        if (摘要校验) {
+            builder.add("MD5", 加解密操作.MD5加密(json + 摘要盐值));
         }
         return builder.build();
     }
 
+    @TargetApi(Build.VERSION_CODES.O)
     protected JSONObject 解包响应数据(String 响应数据) throws 解包出错 {
         try {
+            this.原始数据 = 响应数据;
             JSONObject json = new JSONObject(响应数据);
             //检查数据包签名
-            if (签名校验) {
+            if (摘要校验) {
                 if (!json.has("data") || !json.has("MD5"))
                     throw new 解包出错("数据包没有签名！可能已经被篡改。");
-                if (!加解密操作.MD5加密(json.getString("data") + 签名密钥).equals(json.getString("MD5")))
+                if (!加解密操作.MD5加密(json.getString("data") + 摘要盐值).equals(json.getString("MD5")))
                     throw new 解包出错("数据包签名损坏！可能已经被篡改");
+                if (isSign) {
+                    if (!json.has("sign"))
+                        throw new 解包出错("数据包签名不完整！可能已经被篡改");
+                    RSA rsa = new RSA(new RSA.RSAKey(serverPublicKey, ""));
+                    String data = new String(rsa.公钥解密(Base64.getDecoder().decode(json.getString("sign"))));
+                    if (!data.equals(json.getString("MD5")))
+                        throw new 解包出错("数据包签名损坏！可能已经被篡改");
+                }
                 json = json.getJSONObject("data");
             } else {
                 if (json.has("data") || json.has("MD5"))
@@ -476,6 +495,8 @@ public class 后端云对接类 implements API {
         } catch (JSONException e) {
             e.printStackTrace();
             throw new 解包出错(e.getLocalizedMessage());
+        } catch (Exception e) {
+            throw new 解包出错("数据包签名损坏！可能已经被篡改");
         }
     }
 
@@ -504,6 +525,7 @@ public class 后端云对接类 implements API {
         后端云对接类.证书链 = 证书链;
     }
 
+
     /**
      * 执行判断会员等影响计费的敏感操作时，不要使用客户端本地时间。
      * 因为简单的修改系统时间就能绕过。
@@ -518,4 +540,37 @@ public class 后端云对接类 implements API {
     public long get服务器时间() {
         return 服务器时间 * 1000;
     }
+
+    /**
+     * 读取服务器上一次响应的数据
+     *
+     * @return 上一次响应
+     */
+    @Override
+    public String get原始数据() {
+        return this.原始数据;
+    }
+
+    /**
+     * 是否开启数字签名，启用此设置后，SDK会校验服务器响应数据的数字签名，用以保证数据安全
+     *
+     * @param Sign 是否启用数字签名
+     */
+    @Override
+    public void setSign(boolean Sign) {
+        后端云对接类.isSign = Sign;
+    }
+
+    /**
+     * 设置服务器的公钥，SDK中已经内置了公钥证书，一般情况下您无需改动。
+     *
+     * @param publicKey 公钥
+     */
+    @Override
+    public void setServerPublicKey(String publicKey) throws Exception {
+        RSA rsa = new RSA(new RSA.RSAKey(publicKey, ""));
+        rsa.公钥加密("aaaa".getBytes());
+        后端云对接类.serverPublicKey = publicKey;
+    }
+
 }

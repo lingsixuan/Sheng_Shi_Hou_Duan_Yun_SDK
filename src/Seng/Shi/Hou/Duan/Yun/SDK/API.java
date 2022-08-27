@@ -134,6 +134,28 @@ public interface API {
      */
     void 解绑卡密(String 卡号, @NotNull 解绑卡密回调 回调);
 
+    /**
+     * 是否开启数字签名，启用此设置后，SDK会校验服务器响应数据的数字签名，用以保证数据安全
+     *
+     * @param Sign 是否启用数字签名
+     */
+    void setSign(boolean Sign);
+
+    /**
+     * 设置服务器的公钥，SDK中已经内置了公钥证书，一般情况下您无需改动。
+     *
+     * @param publicKey 公钥
+     * @throws Exception 公钥格式错误
+     */
+    void setServerPublicKey(String publicKey) throws Exception;
+
+    /**
+     * 读取服务器上一次响应的数据
+     *
+     * @return 上一次响应
+     */
+    String get原始数据();
+
     interface 解绑卡密回调 {
         void 解绑成功(String 提示);
 
