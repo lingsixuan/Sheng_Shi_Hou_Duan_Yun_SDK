@@ -3,9 +3,8 @@ package Seng.Shi.Hou.Duan.Yun.SDK;
 import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
-import android.annotation.TargetApi;
+import Seng.Shi.Hou.Duan.Yun.SDK.常量池.POST;
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -27,7 +26,7 @@ import java.util.Objects;
  *
  * @author 驻魂圣使
  */
-public class 后端云对接类 implements API {
+public class 后端云对接类 implements API, POST {
 
     protected int 项目ID;
 
@@ -57,6 +56,8 @@ public class 后端云对接类 implements API {
     protected String 原始数据 = "";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private final String Android_Name = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
 
     /**
      * 此构造函数生成的对象可以显式规定签名校验和签名密钥的值
@@ -241,11 +242,13 @@ public class 后端云对接类 implements API {
     }
 
     @Override
-    public void 使用卡密(int 账户ID, String 卡号, @NotNull 使用卡密回调 回调) {
+    public void 使用卡密(int 账户ID, String 卡号, String 授权码, @NotNull 使用卡密回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
             json.put("key", 卡号);
+            json.put("UID", ANDROID_ID);
+            json.put("power", 授权码);
             json.put("ID", 账户ID);
 
             发送数据("使用卡密.php", json, new 收到数据() {
@@ -287,6 +290,7 @@ public class 后端云对接类 implements API {
             json.put("user", 账号);
             json.put("pass", 密码);
             json.put("UID", ANDROID_ID);
+            json.put("UIDName", Android_Name);
 
             发送数据("登录.php", json, new 收到数据() {
                 @Override
@@ -331,6 +335,7 @@ public class 后端云对接类 implements API {
             json.put("name", 昵称);
             json.put("mail", 邮箱);
             json.put("UID", ANDROID_ID);
+            json.put("UIDName", Android_Name);
 
             发送数据("注册.php", json, new 收到数据() {
                 @Override
@@ -368,6 +373,7 @@ public class 后端云对接类 implements API {
             json.put("xm_id", 项目ID);
             json.put("UID", ANDROID_ID);
             json.put("key", 卡号);
+            json.put("UIDName", Android_Name);
             发送数据("卡密登录.php", json, new 收到数据() {
                 @Override
                 public void 错误(String 错误详情) {
@@ -400,13 +406,58 @@ public class 后端云对接类 implements API {
      * @param 回调 回调
      */
     @Override
-    public void 解绑卡密(String 卡号, @NotNull 解绑卡密回调 回调) {
+    public void 解绑卡密(String 卡号, @NotNull 解除绑定回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
             json.put("UID", ANDROID_ID);
+            json.put("UIDName", Android_Name);
             json.put("key", 卡号);
             发送数据("解绑卡密.php", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.解绑失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject json = 解包响应数据(temp);
+                    if (json.getBoolean("状态")) {
+                        回调.解绑成功(json.getString("信息"));
+                    } else {
+                        throw new 解包出错(json.getString("信息"));
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 如果您的项目启用了绑定设备功能<br>
+     * 那么您将会需要这个API<br>
+     * 此API可以解除账号和设备的绑定<br>
+     * 请注意！<br>
+     * 解除绑定不会验证请求的设备是否是绑定的设备<br>
+     * 既只要拥有账号和密码，且账号解绑间隔时间内没有解除过绑定，就可以请求解除绑定！
+     *
+     * @param user 用户账号
+     * @param pass 账号密码
+     * @param 回调   回调方法
+     */
+    @Override
+    public void 解绑账号(String user, String pass, @NotNull 解除绑定回调 回调) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put(__XM_ID, 项目ID);
+            json.put(__UID, ANDROID_ID);
+            json.put(__UIDName, Android_Name);
+            json.put(__USER, user);
+            json.put(__PASS, pass);
+            发送数据("解除绑定", json, new 收到数据() {
                 @Override
                 public void 错误(String 错误详情) {
                     回调.解绑失败(错误详情);
@@ -571,6 +622,46 @@ public class 后端云对接类 implements API {
     @Override
     public String get原始数据() {
         return this.原始数据;
+    }
+
+    /**
+     * 修改账户的密码
+     *
+     * @param user_data 登录API返回的账户数据对象
+     * @param 原始密码      账号的原始密码
+     * @param 修改后的密码    修改后的密码
+     */
+    @Override
+    public void 修改密码(账户数据类 user_data, String 原始密码, String 修改后的密码, @NotNull 修改密码回调 回调) {
+        try {
+            JSONObject json = new JSONObject();
+            json.put(__XM_ID, 项目ID);
+            json.put(__USER_ID, user_data.getID());
+            json.put(__PASS, 原始密码);
+            json.put(__UPDATE_PASS, 修改后的密码);
+            json.put(__POWER, user_data.get授权码());
+            json.put(__UID, ANDROID_ID);
+            发送数据("修改密码", json, new 收到数据() {
+                @Override
+                public void 错误(String 错误详情) {
+                    回调.修改失败(错误详情);
+                }
+
+                @Override
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
+                    if (request.code() != 200)
+                        throw new 解包出错("网络异常");
+                    JSONObject json = 解包响应数据(temp);
+                    if (json.getBoolean("状态")) {
+                        回调.修改成功(json.getString("信息"));
+                    } else {
+                        throw new 解包出错(json.getString("信息"));
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

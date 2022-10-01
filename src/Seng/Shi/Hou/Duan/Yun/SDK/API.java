@@ -61,7 +61,7 @@ public interface API {
      * @param 账户ID 要激活的账户的ID，您可以调用登录回调传入的{@link 账户数据类}中的getID()方法来获取 ,注意！您只能获取到当前登录用户的ID，后端云中没有提供获取他人ID的API
      * @param 卡号   要使用的卡号，卡密不可重复使用，一张卡密只能一个账户使用，卡密使用过后即可丢弃
      */
-    void 使用卡密(int 账户ID, String 卡号, 使用卡密回调 回调);
+    void 使用卡密(int 账户ID, String 卡号, String 授权码, 使用卡密回调 回调);
 
     /**
      * 注册一个账户到后端云中
@@ -132,7 +132,21 @@ public interface API {
      * @param 卡号 卡号
      * @param 回调 回调
      */
-    void 解绑卡密(String 卡号, @NotNull 解绑卡密回调 回调);
+    void 解绑卡密(String 卡号, @NotNull 解除绑定回调 回调);
+
+    /**
+     * 如果您的项目启用了绑定设备功能<br>
+     * 那么您将会需要这个API<br>
+     * 此API可以解除账号和设备的绑定<br>
+     * 请注意！<br>
+     * 解除绑定不会验证请求的设备是否是绑定的设备<br>
+     * 既只要拥有账号和密码，且账号解绑间隔时间内没有解除过绑定，就可以请求解除绑定！
+     *
+     * @param user 用户账号
+     * @param pass 账号密码
+     * @param 回调   回调方法
+     */
+    void 解绑账号(String user, String pass, @NotNull 解除绑定回调 回调);
 
     /**
      * 是否开启数字签名，启用此设置后，SDK会校验服务器响应数据的数字签名，用以保证数据安全
@@ -156,7 +170,22 @@ public interface API {
      */
     String get原始数据();
 
-    interface 解绑卡密回调 {
+    /**
+     * 修改账户的密码
+     *
+     * @param user_data 登录API返回的账户数据对象
+     * @param 原始密码      账号的原始密码
+     * @param 修改后的密码    修改后的密码
+     */
+    void 修改密码(账户数据类 user_data, String 原始密码, String 修改后的密码, @NotNull 修改密码回调 回调);
+
+    interface 修改密码回调 {
+        void 修改成功(String 提示);
+
+        void 修改失败(String 错误);
+    }
+
+    interface 解除绑定回调 {
         void 解绑成功(String 提示);
 
         void 解绑失败(String 原因);
