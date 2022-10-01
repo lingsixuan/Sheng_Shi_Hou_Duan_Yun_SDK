@@ -6,6 +6,8 @@ import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import ling.android.操作.*;
 import okhttp3.*;
@@ -53,6 +55,8 @@ public class 后端云对接类 implements API {
     protected String ANDROID_ID;
 
     protected String 原始数据 = "";
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     /**
      * 此构造函数生成的对象可以显式规定签名校验和签名密钥的值
@@ -179,11 +183,11 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200) {
                         throw new 解包出错("网络异常");
                     }
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (!json.getBoolean("状态"))
                         throw new 解包出错(json.getString("信息"));
                     回调.读取公告成功(json.getString("信息"));
@@ -215,10 +219,10 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (!json.getBoolean("状态")) {
                         throw new 解包出错(json.getString("信息"));
                     }
@@ -251,10 +255,10 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
                         回调.使用成功(卡号);
                     } else {
@@ -291,10 +295,10 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
                         回调.登录成功(new 账户数据类(json.getJSONObject("信息")));
                     } else {
@@ -335,10 +339,10 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
                         回调.注册成功(账号, 密码);
                     } else throw new 解包出错(json.getString("信息"));
@@ -371,10 +375,10 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
                         回调.登录成功(json.getString("信息"), json.getLong("到期时间") * 1000);
                     } else {
@@ -409,10 +413,10 @@ public class 后端云对接类 implements API {
                 }
 
                 @Override
-                public void 收到响应(Response request) throws JSONException, 解包出错, IOException {
+                public void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException {
                     if (request.code() != 200)
                         throw new 解包出错("网络异常");
-                    JSONObject json = 解包响应数据(Objects.requireNonNull(request.body()).string());
+                    JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
                         回调.解绑成功(json.getString("信息"));
                     } else {
@@ -440,13 +444,28 @@ public class 后端云对接类 implements API {
 
                     @Override
                     public void 请求完成(@NotNull Call call, @NotNull Response response) throws IOException {
-                        try {
-                            回调.收到响应(response);
-                        } catch (JSONException e) {
-                            回调.错误("解析响应失败");
-                        } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
-                            回调.错误(解包出错.异常);
-                        }
+                        new Thread(() -> {
+                            String temp;
+                            try {
+                                temp = response.body().string();
+                            } catch (IOException e) {
+                                mainHandler.post(() -> {
+                                    回调.错误("IO错误");
+                                });
+                                return;
+                            }
+                            mainHandler.post(() -> {
+                                try {
+                                    回调.收到响应(response, temp);
+                                } catch (JSONException e) {
+                                    回调.错误("解析响应失败");
+                                } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
+                                    回调.错误(解包出错.异常);
+                                } catch (IOException e) {
+                                    回调.错误("IO错误");
+                                }
+                            });
+                        }).start();
                     }
                 });
     }
@@ -461,7 +480,7 @@ public class 后端云对接类 implements API {
         return builder.build();
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
+
     protected JSONObject 解包响应数据(String 响应数据) throws 解包出错 {
         try {
             this.原始数据 = 响应数据;
@@ -475,10 +494,13 @@ public class 后端云对接类 implements API {
                 if (isSign) {
                     if (!json.has("sign"))
                         throw new 解包出错("数据包签名不完整！可能已经被篡改");
-                    RSA rsa = new RSA(new RSA.RSAKey(serverPublicKey, ""));
-                    String data = new String(rsa.公钥解密(Base64.getDecoder().decode(json.getString("sign"))));
-                    if (!data.equals(json.getString("MD5")))
-                        throw new 解包出错("数据包签名损坏！可能已经被篡改");
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        RSA rsa = new RSA(new RSA.RSAKey(serverPublicKey, ""));
+                        String data = new String(
+                                rsa.公钥解密(Base64.getDecoder().decode(json.getString("sign").getBytes())));
+                        if (!data.equals(json.getString("MD5")))
+                            throw new 解包出错("数据包签名损坏！可能已经被篡改");
+                    }
                 }
                 json = json.getJSONObject("data");
             } else {

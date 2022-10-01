@@ -212,6 +212,6 @@ public interface API {
     interface 收到数据 {
         void 错误(String 错误详情);
 
-        void 收到响应(Response request) throws JSONException, 解包出错, IOException;
+        void 收到响应(Response request, String temp) throws JSONException, 解包出错, IOException;
     }
 }
