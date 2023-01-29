@@ -1,14 +1,9 @@
 <component name="libraryTable">
   <library name="android-stubs-src">
-    <CLASSES>
-      <root url="jar://D:/adnroid/platforms/android-30/android.jar!/" />
-      <root url="jar://D:/adnroid/platforms/android-30/core-for-system-modules.jar!/" />
-      <root url="jar://D:/adnroid/platforms/android-30/uiautomator.jar!/" />
-    </CLASSES>
+    <CLASSES />
     <JAVADOC />
     <SOURCES>
-      <root url="jar://D:/adnroid/platforms/android-30/core-for-system-modules.jar!/ojluni/src/generated-annotation/java" />
-      <root url="jar://D:/adnroid/platforms/android-30/core-for-system-modules.jar!/ojluni/src/lambda/java" />
+      <root url="jar://$USER_HOME$/AppData/Local/Android/Sdk/platforms/android-33/android-stubs-src.jar!/" />
     </SOURCES>
   </library>
 </component>
