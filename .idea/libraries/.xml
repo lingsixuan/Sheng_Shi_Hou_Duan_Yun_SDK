@@ -6,7 +6,6 @@
     <JAVADOC />
     <SOURCES>
       <root url="jar://$PROJECT_DIR$/lib/核心支持库.jar!/" />
-      <root url="jar://$PROJECT_DIR$/lib/核心支持库.jar!/" />
     </SOURCES>
   </library>
 </component>

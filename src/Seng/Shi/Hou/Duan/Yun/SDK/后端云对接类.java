@@ -4,18 +4,22 @@ import Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.版本数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.data.账户数据类;
 import Seng.Shi.Hou.Duan.Yun.SDK.常量池.POST;
+
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+
+import ling.android.工具.Base64;
 import ling.android.操作.*;
 import okhttp3.*;
+
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.Base64;
+import java.security.GeneralSecurityException;
 import java.util.Date;
 import java.util.Objects;
 
@@ -23,6 +27,7 @@ import java.util.Objects;
  * API接口的具体实现。
  * 此类需要有访问网络的权限，您需要在AndroidManifest.xml中声明网络权限。
  * 要使用此类，您需要在圣使后端云系统中拥有账号！
+ *
  * @author 驻魂圣使
  */
 public class 后端云对接类 implements API, POST {
@@ -39,14 +44,15 @@ public class 后端云对接类 implements API, POST {
 
     protected String 服务器地址 = "https://api.lingsixuan.top/api/";
 
-    protected static okhttp.证书 证书链 = new okhttp.证书()
+    protected static okhttp.证书固定数据 证书链 = new okhttp.证书固定数据()
             .add("api.lingsixuan.top", "sha256/cOZS1D14NVyXRbTjP2SAhTpP4pMHaHWrvT6DJY/tPQ8=");
 
     protected static boolean isSign = false;
 
     protected static String serverPublicKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCGP6tTIDE6miH9XINvSZ4MjyHHElpVEvaweIFAnLmFBcIRIXO4iDGh0DVxHH7VmYtAGKTgfZX9NF6agqMoLFQFavnFP3WcCv92kHibduOaV1gymHKffTRVMOXSmTo6/Ya891RpnrkEQi/5Js1zZMPdViB7IHXv5AqOVJ7RfZvZEQIDAQAB";
 
-    protected boolean isPinning = false;
+    protected static okhttp.自签名证书集 trustSSL = new okhttp.自签名证书集();
+    protected boolean isSSLPinning = false;
 
     protected Context context;
 
@@ -212,7 +218,7 @@ public class 后端云对接类 implements API, POST {
             json.put("xm_id", 项目ID);
             json.put("v", 当前版本号);
 
-            发送数据("检查更新.php", json, new 后端云对接类.收到数据() {
+            发送数据("检查更新.php", json, new 收到数据() {
                 @Override
                 public void 错误(String 错误详情) {
                     回调.检查更新出错(错误详情);
@@ -241,14 +247,14 @@ public class 后端云对接类 implements API, POST {
     }
 
     @Override
-    public void 使用卡密(int 账户ID, String 卡号, String 授权码, @NotNull 使用卡密回调 回调) {
+    public void 使用卡密(账户数据类 账户, String 卡号, @NotNull 使用卡密回调 回调) {
         try {
             JSONObject json = new JSONObject();
             json.put("xm_id", 项目ID);
             json.put("key", 卡号);
             json.put("UID", ANDROID_ID);
-            json.put("power", 授权码);
-            json.put("ID", 账户ID);
+            json.put("power", 账户.get授权码());
+            json.put("ID", 账户.getID());
 
             发送数据("使用卡密.php", json, new 收到数据() {
                 @Override
@@ -481,43 +487,49 @@ public class 后端云对接类 implements API, POST {
 
 
     protected void 发送数据(String api, JSONObject json, @NotNull 收到数据 回调) {
-        new okhttp(isPinning ? 证书链 : new okhttp.证书()).取异步对象()
-                .post(服务器地址 + api, 生成数据(json), new okhttp.异步请求.响应() {
-                    @Override
-                    public void 请求出错(@NotNull Call call, @NotNull IOException e) {
-                        if (Objects.requireNonNull(e.getMessage()).indexOf("Certificate pinning failure!", 0) != -1) {
-                            回调.错误("不被信任的证书！");
-                        } else {
-                            回调.错误("网络异常");
-                        }
-                    }
-
-                    @Override
-                    public void 请求完成(@NotNull Call call, @NotNull okhttp.回复 回复) throws IOException {
-                        new Thread(() -> {
-                            String temp;
-                            try {
-                                temp = 回复.getResponse().body().string();
-                            } catch (IOException e) {
-                                mainHandler.post(() -> {
-                                    回调.错误("IO错误");
-                                });
-                                return;
+        try {
+            new okhttp(trustSSL, isSSLPinning ? 证书链 : new okhttp.证书固定数据()).取异步对象()
+                    .post(服务器地址 + api, 生成数据(json), new okhttp.异步请求.响应() {
+                        @Override
+                        public void 请求出错(@NotNull Call call, @NotNull IOException e) {
+                            if (Objects.requireNonNull(e.getMessage()).contains("Certificate pinning failure!")) {
+                                回调.错误("不被信任的证书！");
+                            } else {
+                                回调.错误("网络异常");
                             }
-                            mainHandler.post(() -> {
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void 请求完成(@NotNull Call call, @NotNull okhttp.回复 回复) throws IOException {
+                            new Thread(() -> {
+                                String temp;
                                 try {
-                                    回调.收到响应(回复.getResponse(), temp);
-                                } catch (JSONException e) {
-                                    回调.错误("解析响应失败");
-                                } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
-                                    回调.错误(解包出错.异常);
+                                    temp = 回复.getResponse().body().string();
                                 } catch (IOException e) {
-                                    回调.错误("IO错误");
+                                    mainHandler.post(() -> {
+                                        回调.错误("IO错误");
+                                    });
+                                    return;
                                 }
-                            });
-                        }).start();
-                    }
-                });
+                                mainHandler.post(() -> {
+                                    try {
+                                        回调.收到响应(回复.getResponse(), temp);
+                                    } catch (JSONException e) {
+                                        回调.错误("解析响应失败");
+                                    } catch (Seng.Shi.Hou.Duan.Yun.SDK.Exception.解包出错 解包出错) {
+                                        回调.错误(解包出错.异常);
+                                    } catch (IOException e) {
+                                        回调.错误("IO错误");
+                                    }
+                                });
+                            }).start();
+                        }
+                    });
+        } catch (IOException | GeneralSecurityException e) {
+            回调.错误("网络异常");
+            e.printStackTrace();
+        }
     }
 
 
@@ -539,18 +551,18 @@ public class 后端云对接类 implements API, POST {
             if (摘要校验) {
                 if (!json.has("data") || !json.has("MD5"))
                     throw new 解包出错("数据包没有签名！可能已经被篡改。");
-                if (!加解密操作.MD5加密(json.getString("data") + 摘要盐值).equals(json.getString("MD5")))
+                if (!加解密操作.MD5加密(json.getJSONObject("data") + 摘要盐值).equals(json.getString("MD5")))
                     throw new 解包出错("数据包签名损坏！可能已经被篡改");
                 if (isSign) {
                     if (!json.has("sign"))
                         throw new 解包出错("数据包签名不完整！可能已经被篡改");
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        RSA rsa = new RSA(new RSA.RSAKey(serverPublicKey, ""));
-                        String data = new String(
-                                rsa.公钥解密(Base64.getDecoder().decode(json.getString("sign").getBytes())));
-                        if (!data.equals(json.getString("MD5")))
-                            throw new 解包出错("数据包签名损坏！可能已经被篡改");
-                    }
+                    //if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    RSA rsa = new RSA(new RSA.RSAKey(serverPublicKey, ""));
+                    String data = new String(
+                            rsa.公钥解密(Base64.getDecoder().decode(json.getString("sign").getBytes())));
+                    if (!data.equals(json.getString("MD5")))
+                        throw new 解包出错("数据包签名损坏！可能已经被篡改");
+                    //}
                 }
                 json = json.getJSONObject("data");
             } else {
@@ -581,8 +593,13 @@ public class 后端云对接类 implements API, POST {
      * @param pinning 是否启用？
      */
     @Override
-    public void setPinning(boolean pinning) {
-        this.isPinning = pinning;
+    public void setSSLPinning(boolean pinning) {
+        this.isSSLPinning = pinning;
+    }
+
+    @Override
+    public okhttp.自签名证书集 getTrustSSL() {
+        return trustSSL;
     }
 
     /**
@@ -593,7 +610,7 @@ public class 后端云对接类 implements API, POST {
      * @param 证书链
      */
     @Override
-    public void set证书链(okhttp.证书 证书链) {
+    public void set证书链(okhttp.证书固定数据 证书链) {
         后端云对接类.证书链 = 证书链;
     }
 
@@ -609,6 +626,7 @@ public class 后端云对接类 implements API, POST {
      *
      * @return 上次请求服务器时服务器返回的时间戳
      */
+    @Override
     public long get服务器时间() {
         return 服务器时间 * 1000;
     }
@@ -621,6 +639,11 @@ public class 后端云对接类 implements API, POST {
     @Override
     public String get原始数据() {
         return this.原始数据;
+    }
+
+    @Override
+    public void setHttpUrl(String url) {
+        this.服务器地址 = url;
     }
 
     /**

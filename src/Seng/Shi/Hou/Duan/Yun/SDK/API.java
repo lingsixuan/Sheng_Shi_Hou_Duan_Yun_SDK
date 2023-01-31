@@ -58,10 +58,10 @@ public interface API {
      * 卡密使用过后既销毁，无法重复使用
      * 请注意！使用卡密之后您需要重新调用登录接口获取账户最新数据！！
      *
-     * @param 账户ID 要激活的账户的ID，您可以调用登录回调传入的{@link 账户数据类}中的getID()方法来获取 ,注意！您只能获取到当前登录用户的ID，后端云中没有提供获取他人ID的API
-     * @param 卡号   要使用的卡号，卡密不可重复使用，一张卡密只能一个账户使用，卡密使用过后即可丢弃
+     * @param 账户 要激活的账户的数据，您可以传入登录回调传入的{@link 账户数据类}
+     * @param 卡号 要使用的卡号，卡密不可重复使用，一张卡密只能一个账户使用，卡密使用过后即可丢弃
      */
-    void 使用卡密(int 账户ID, String 卡号, String 授权码, 使用卡密回调 回调);
+    void 使用卡密(账户数据类 账户, String 卡号, 使用卡密回调 回调);
 
     /**
      * 注册一个账户到后端云中
@@ -103,7 +103,14 @@ public interface API {
      *
      * @param pinning 是否启用？
      */
-    void setPinning(boolean pinning);
+    void setSSLPinning(boolean pinning);
+
+    /**
+     * 获取当前信任的自签名证书集合
+     *
+     * @return 自签名证书集
+     */
+    okhttp.自签名证书集 getTrustSSL();
 
     /**
      * SDK内部已经设置号了服务器的公钥证书，如果服务器更换了公钥证书而没有即使提供新的SDK
@@ -112,7 +119,7 @@ public interface API {
      *
      * @param 证书链
      */
-    void set证书链(okhttp.证书 证书链);
+    void set证书链(okhttp.证书固定数据 证书链);
 
     /**
      * 使用卡密直接登录，要调用此API需要在圣使后端云客户端内启用项目的单码登录设置。
@@ -169,6 +176,15 @@ public interface API {
      * @return 上一次响应
      */
     String get原始数据();
+
+    /**
+     * 设置服务器地址
+     *
+     * @param url 服务器地址,以/api结尾
+     */
+    void setHttpUrl(String url);
+
+    long get服务器时间();
 
     /**
      * 修改账户的密码
