@@ -1,7 +1,7 @@
 package Seng.Shi.Hou.Duan.Yun.SDK.data;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import ling.json.JSONException;
+import ling.json.JSONObject;
 
 import java.io.Serializable;
 

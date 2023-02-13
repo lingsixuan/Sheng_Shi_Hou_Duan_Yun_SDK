@@ -4,6 +4,7 @@
     <root id="archive" name="圣使后端云SDK.jar">
       <element id="module-output" name="圣使后端云SDK" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/核心支持库.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/ling.json.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
