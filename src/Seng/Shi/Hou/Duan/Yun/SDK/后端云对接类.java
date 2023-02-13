@@ -64,6 +64,75 @@ public class 后端云对接类 implements API, POST {
 
     private final String Android_Name = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
 
+    static {
+        trustSSL.add("api.lingsixuan.top", "-----BEGIN CERTIFICATE-----\n" +
+                "MIIGbjCCBNagAwIBAgIRAKX37J9hwUSRizXKjoa2I70wDQYJKoZIhvcNAQEMBQAw\n" +
+                "WTELMAkGA1UEBhMCQ04xJTAjBgNVBAoTHFRydXN0QXNpYSBUZWNobm9sb2dpZXMs\n" +
+                "IEluYy4xIzAhBgNVBAMTGlRydXN0QXNpYSBSU0EgRFYgVExTIENBIEcyMB4XDTIy\n" +
+                "MDcyNDAwMDAwMFoXDTIzMDcyNDIzNTk1OVowHTEbMBkGA1UEAxMSYXBpLmxpbmdz\n" +
+                "aXh1YW4udG9wMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvzlH5cTI\n" +
+                "4jPngZ1swgFOB4kaxdnUe2ts4HSuFB7qUi95DbPWL624Y/XBtah00q93Mi5hOAYS\n" +
+                "fukb+BKkiBgTuygMnf1gULdEHC/XJ1Yyp1jb6dC8ZxYpmsfTYXvenM97fT1uy7up\n" +
+                "CiqkRoH5Al0Yh64Hev9Py0IZGhhUmTOKkA9SaMc7NQ/CzW22Xx3awBNeBQRXlEcO\n" +
+                "oAS4GWk6K/e/BF7jboMRV5QJURzJQBQssnFY1VY0THDrjI9HiAk4p7ARKsQc5Fid\n" +
+                "RETIOQNHRxV9/o8HsiOTZynAbjFJoPeAK808PMjJ3euFYz9cLNymIIXnW6MI3f2c\n" +
+                "CWR1by9nrXHavQIDAQABo4IC6zCCAucwHwYDVR0jBBgwFoAUXzp8ERB+DGdxYdyL\n" +
+                "o7UAA2f1VxwwHQYDVR0OBBYEFIF8PW1UBy0zEahhC9PiGQunQ2JAMA4GA1UdDwEB\n" +
+                "/wQEAwIFoDAMBgNVHRMBAf8EAjAAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEF\n" +
+                "BQcDAjBJBgNVHSAEQjBAMDQGCysGAQQBsjEBAgIxMCUwIwYIKwYBBQUHAgEWF2h0\n" +
+                "dHBzOi8vc2VjdGlnby5jb20vQ1BTMAgGBmeBDAECATB9BggrBgEFBQcBAQRxMG8w\n" +
+                "QgYIKwYBBQUHMAKGNmh0dHA6Ly9jcnQudHJ1c3QtcHJvdmlkZXIuY24vVHJ1c3RB\n" +
+                "c2lhUlNBRFZUTFNDQUcyLmNydDApBggrBgEFBQcwAYYdaHR0cDovL29jc3AudHJ1\n" +
+                "c3QtcHJvdmlkZXIuY24wHQYDVR0RBBYwFIISYXBpLmxpbmdzaXh1YW4udG9wMIIB\n" +
+                "fQYKKwYBBAHWeQIEAgSCAW0EggFpAWcAdQCt9776fP8QyIudPZwePhhqtGcpXc+x\n" +
+                "DCTKhYY069yCigAAAYIvSEBKAAAEAwBGMEQCICiTx8jeE+SlBc7VL/R9XurScbNR\n" +
+                "s+7p38HDwceGaYzzAiBTZCEyzXh2WGLHn7IntYCV50ujbqaWbokUlcR7egwGXwB2\n" +
+                "AHoyjFTYty22IOo44FIe6YQWcDIThU070ivBOlejUutSAAABgi9IQKYAAAQDAEcw\n" +
+                "RQIhAP4QShzKQDsjEzXoYIwW1wTK+mutrDM+VoSN15Yy8yqHAiAyLmtzOZeMKRdq\n" +
+                "mSDtrZo8ax+WyA6YcAFJByWitcYjpwB2AOg+0No+9QY1MudXKLyJa8kD08vREWvs\n" +
+                "62nhd31tBr1uAAABgi9IQAsAAAQDAEcwRQIgFbpWlOHwtDVeC+LBefCNQZw1SKRR\n" +
+                "yv8dCt3R1gl5ZRECIQCRyUkY54iQHe5aH2Q3MP1/0VrsCGUHrA8wtqgeV3Z/yTAN\n" +
+                "BgkqhkiG9w0BAQwFAAOCAYEAg1Z+/Yz2Cuqb+FE84j3xBxxARhB+ZMbczt8Hi5v4\n" +
+                "9jnUuJ85lLcjBTrIn+FxUdfZEd73CxVAveQzL+ppEihTvmO5NoU5ugD/lnhANYEo\n" +
+                "JFMapLuRNYfN+/t0Ac60b5CE7Mt7UHfXUMjJWgqJcXx6oUVr27n3U3lgXolMG0d4\n" +
+                "tI0kHu9bvLTFyupcpPjYAu2fBQt9qfu6u9bpfvAOsnii4dOCO0i00o8HDsb9e73n\n" +
+                "s11ma/8LGwmweO5zqB+Oye/Exiyz6ormgrf3BS+HcLCqPpOp4GKO18Oy5B6V5oWZ\n" +
+                "X20eQPYAvu/hnXBI7/+nHJDHDDcXN0H4aIYvmS1fQUgIH5kmaLJqjeJiT6Ql87uL\n" +
+                "oo9/mUUYexGcyFMjlrCAF3NKNtMjzBrjo3kWQ4AjrVMDT7sgN9Ng9glEoqKgZZGi\n" +
+                "bkvXQUt+LUhXDAvdatyFSB3UIySe9zOCgSNnudOVLtoI97gH6AUcnFHdTZwX5BoM\n" +
+                "tOzu97DusRN/uVReRHL27eNk\n" +
+                "-----END CERTIFICATE-----\n" +
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIFBzCCA++gAwIBAgIRALIM7VUuMaC/NDp1KHQ76aswDQYJKoZIhvcNAQELBQAw\n" +
+                "ezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4G\n" +
+                "A1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExpbWl0ZWQxITAfBgNV\n" +
+                "BAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yMjAxMTAwMDAwMDBaFw0y\n" +
+                "ODEyMzEyMzU5NTlaMFkxCzAJBgNVBAYTAkNOMSUwIwYDVQQKExxUcnVzdEFzaWEg\n" +
+                "VGVjaG5vbG9naWVzLCBJbmMuMSMwIQYDVQQDExpUcnVzdEFzaWEgUlNBIERWIFRM\n" +
+                "UyBDQSBHMjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAKjGDe0GSaBs\n" +
+                "Yl/VhMaTM6GhfR1TAt4mrhN8zfAMwEfLZth+N2ie5ULbW8YvSGzhqkDhGgSBlafm\n" +
+                "qq05oeESrIJQyz24j7icGeGyIZ/jIChOOvjt4M8EVi3O0Se7E6RAgVYcX+QWVp5c\n" +
+                "Sy+l7XrrtL/pDDL9Bngnq/DVfjCzm5ZYUb1PpyvYTP7trsV+yYOCNmmwQvB4yVjf\n" +
+                "IIpHC1OcsPBntMUGeH1Eja4D+qJYhGOxX9kpa+2wTCW06L8T6OhkpJWYn5JYiht5\n" +
+                "8exjAR7b8Zi3DeG9oZO5o6Qvhl3f8uGU8lK1j9jCUN/18mI/5vZJ76i+hsgdlfZB\n" +
+                "Rh5lmAQjD80M9TY+oD4MYUqB5XrigPfFAUwXFGehhlwCVw7y6+5kpbq/NpvM5Ba8\n" +
+                "SeQYUUuMA8RXpTtGlrrTPqJryfa55hTuX/ThhX4gcCVkbyujo0CYr+Uuc14IOyNY\n" +
+                "1fD0/qORbllbgV41wiy/2ZUWZQUodqHWkjT1CwIMbQOY5jmrSYGBwwIDAQABo4IB\n" +
+                "JjCCASIwHwYDVR0jBBgwFoAUoBEKIz6W8Qfs4q8p74Klf9AwpLQwHQYDVR0OBBYE\n" +
+                "FF86fBEQfgxncWHci6O1AANn9VccMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8E\n" +
+                "CDAGAQH/AgEAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAiBgNVHSAE\n" +
+                "GzAZMA0GCysGAQQBsjEBAgIxMAgGBmeBDAECATBDBgNVHR8EPDA6MDigNqA0hjJo\n" +
+                "dHRwOi8vY3JsLmNvbW9kb2NhLmNvbS9BQUFDZXJ0aWZpY2F0ZVNlcnZpY2VzLmNy\n" +
+                "bDA0BggrBgEFBQcBAQQoMCYwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmNvbW9k\n" +
+                "b2NhLmNvbTANBgkqhkiG9w0BAQsFAAOCAQEAHMUom5cxIje2IiFU7mOCsBr2F6CY\n" +
+                "eU5cyfQ/Aep9kAXYUDuWsaT85721JxeXFYkf4D/cgNd9+hxT8ZeDOJrn+ysqR7NO\n" +
+                "2K9AdqTdIY2uZPKmvgHOkvH2gQD6jc05eSPOwdY/10IPvmpgUKaGOa/tyygL8Og4\n" +
+                "3tYyoHipMMnS4OiYKakDJny0XVuchIP7ZMKiP07Q3FIuSS4omzR77kmc75/6Q9dP\n" +
+                "v4wa90UCOn1j6r7WhMmX3eT3Gsdj3WMe9bYD0AFuqa6MDyjIeXq08mVGraXiw73s\n" +
+                "Zale8OMckn/BU3O/3aFNLHLfET2H2hT6Wb3nwxjpLIfXmSVcVd8A58XH0g==\n" +
+                "-----END CERTIFICATE-----\n");
+    }
+
     /**
      * 此构造函数生成的对象可以显式规定签名校验和签名密钥的值
      *
@@ -232,7 +301,7 @@ public class 后端云对接类 implements API, POST {
                     if (!json.getBoolean("状态")) {
                         throw new 解包出错(json.getString("信息"));
                     }
-                    json = json.getJSONObject("信息");
+                    json = json.getJSONObject("数据");
                     if (json.getInt("更新") == 1) {
                         回调.发现更新(new 版本数据类(json));
                     } else {
@@ -309,7 +378,7 @@ public class 后端云对接类 implements API, POST {
                         throw new 解包出错("网络异常");
                     JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
-                        回调.登录成功(new 账户数据类(json.getJSONObject("信息")));
+                        回调.登录成功(new 账户数据类(json.getJSONObject("数据")));
                     } else {
                         回调.登录失败(json.getString("信息"));
                     }
@@ -391,7 +460,8 @@ public class 后端云对接类 implements API, POST {
                         throw new 解包出错("网络异常");
                     JSONObject json = 解包响应数据(temp);
                     if (json.getBoolean("状态")) {
-                        回调.登录成功(json.getString("信息"), json.getLong("到期时间") * 1000);
+                        json = json.getJSONObject("数据");
+                        回调.登录成功(json.getString("message"), json.getLong("到期时间") * 1000);
                     } else {
                         throw new 解包出错(json.getString("信息"));
                     }
